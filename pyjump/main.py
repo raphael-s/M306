@@ -1,6 +1,7 @@
 from Tkinter import Canvas, Frame, Tk
 import tkFont
 import os
+import player
 
 
 WIDTH = 500
@@ -19,21 +20,36 @@ class Board(Canvas):
         self.gameOver = False
         self.initObj()
         self.after(DELAY, self.onTimer)
+        self.bind_all("<a>", self.playerMoveLeft)
+        self.bind_all("<d>", self.playerMoveRight)
 
     def initObj(self):
-        self.create_rectangle(50, 50, 100, 100, tag="square", fill="green")
+        self.player = player.Player(0, 5, 50, 50, self.create_rectangle(50, HEIGHT - 200, 100, HEIGHT - 150, tag="player", fill="green"))
 
     def checkCollision(self):
-        pass
+        if int(self.gety(self.player.id)) >= HEIGHT - self.player.sizey:
+            self.player.jump()
 
     def doMove(self):
-        self.move(self.find_withtag("square"), 1, 1)
+        self.player.move(self)
 
     def checkHealth(self):
         if self.gameOver > 0:
             self.create_text(WIDTH / 2, HEIGHT / 2 - 100, text="Game Over", font=tkFont.Font(size="70"), tag="GameOver")
         else:
             self.timer = self.after(DELAY, self.onTimer)
+
+    def getx(self, id):
+        return self.coords(id)[0]
+
+    def gety(self, id):
+        return self.coords(id)[1]
+
+    def playerMoveRight(self, e):
+        self.player.moveRight(self)
+
+    def playerMoveLeft(self, e):
+        self.player.moveLeft(self)
 
     def onTimer(self):
         self.checkHealth()
