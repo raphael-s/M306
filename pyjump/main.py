@@ -30,6 +30,11 @@ class Board(Canvas):
         if int(self.gety(self.player.id)) >= HEIGHT - self.player.sizey:
             self.player.jump()
 
+        if self.getx(self.player.id) >= WIDTH:
+        	self.move(self.player.id, -self.player.sizex - WIDTH, 0)
+        elif self.getx(self.player.id) <= - self.player.sizex:
+        	self.move(self.player.id, self.player.sizex + WIDTH, 0)
+
     def doMove(self):
         self.player.move(self)
 
