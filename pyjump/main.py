@@ -1,4 +1,5 @@
 from Tkinter import Canvas, Frame, Tk
+from PIL import ImageTk
 import tkFont
 import os
 import player
@@ -24,19 +25,26 @@ class Board(Canvas):
         self.bind_all("<d>", self.playerMoveRight)
 
     def initObj(self):
+        bg_img = ImageTk.PhotoImage(file=ROOT_DIR + "/pyjump/gfx/bg.png")
+        self.bg_img = bg_img
+        self.bglist = []
+        self.bglist.append(self.create_image(0, -50, image=self.bg_img, tag="bg1", anchor="nw"))
+        self.bglist.append(self.create_image(0, -850, image=self.bg_img, tag="bg2", anchor="nw"))
         self.player = player.Player(0, 5, 50, 50, self.create_rectangle(50, HEIGHT - 200, 100, HEIGHT - 150, tag="player", fill="green"))
 
     def checkCollision(self):
         if int(self.gety(self.player.id)) >= HEIGHT - self.player.sizey:
             self.player.jump()
 
-        if self.getx(self.player.id) >= WIDTH:
-        	self.move(self.player.id, -self.player.sizex - WIDTH, 0)
-        elif self.getx(self.player.id) <= - self.player.sizex:
-        	self.move(self.player.id, self.player.sizex + WIDTH, 0)
-
     def doMove(self):
         self.player.move(self)
+
+        if self.player.movey < 0:
+            for bg in self.bglist:
+                self.move(bg, 0, -self.player.movey)
+
+                if self.gety(bg) >= HEIGHT:
+                    self.move(bg, 0, -1550)
 
     def checkHealth(self):
         if self.gameOver > 0:
