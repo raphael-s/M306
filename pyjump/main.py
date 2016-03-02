@@ -1,8 +1,10 @@
 from Tkinter import Canvas, Frame, Tk
 from PIL import ImageTk
+from random import randint
 import tkFont
 import os
 import player
+import platform
 
 
 WIDTH = 500
@@ -19,6 +21,7 @@ class Board(Canvas):
 
     def initGame(self):
         self.gameOver = False
+        self.highestPlat = ""
         self.initObj()
         self.after(DELAY, self.onTimer)
         self.bind_all("<a>", self.playerMoveLeft)
@@ -30,6 +33,7 @@ class Board(Canvas):
         self.bglist = []
         self.bglist.append(self.create_image(0, -50, image=self.bg_img, tag="bg1", anchor="nw"))
         self.bglist.append(self.create_image(0, -850, image=self.bg_img, tag="bg2", anchor="nw"))
+        self.spawnPlatform()
         self.player = player.Player(0, 5, 50, 50, self.create_rectangle(50, HEIGHT - 200, 100, HEIGHT - 150, tag="player", fill="green"))
 
     def checkCollision(self):
@@ -45,6 +49,13 @@ class Board(Canvas):
 
                 if self.gety(bg) >= HEIGHT:
                     self.move(bg, 0, -1550)
+
+        for plat in self.find_withtag("platform"):
+            if self.player.movey < 0:
+                platMovey = self.player.movey
+            else:
+                platMovey = 0
+            self.move(plat, 0, -platMovey)
 
     def checkHealth(self):
         if self.gameOver > 0:
@@ -68,6 +79,15 @@ class Board(Canvas):
         self.checkHealth()
         self.checkCollision()
         self.doMove()
+        self.spawn()
+
+    def spawn(self):
+        if self.gety(self.highestPlat) > 50:
+            self.spawnPlatform()
+
+    def spawnPlatform(self):
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, -10, randx + 50, 0, fill="blue", width=0, tag="platform")
 
 
 class Game(Frame):
