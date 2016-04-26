@@ -17,6 +17,10 @@ class Player(object):
             self.movey += 1
             self.jumpSpeed -= 1
 
+        if self.movey < 0:
+            board.score -= self.movey
+            board.itemconfigure(board.find_withtag("score"), text=board.score)
+
         if self.movex > 0:
             self.movex -= 1
         elif self.movex < 0:
