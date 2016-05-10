@@ -1,7 +1,5 @@
 class Platform(object):
-    def __init__(self, movex, movey, sizex, sizey, id):
-        self.movex = movex
-        self.movey = movey
+    def __init__(self, sizex, sizey, id):
         self.sizex = sizex
         self.sizey = sizey
         self.id = id

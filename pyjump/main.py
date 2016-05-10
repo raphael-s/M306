@@ -6,6 +6,7 @@ from Tkinter import Tk
 import os
 import platform
 import player
+import shot
 import tkFont
 
 
@@ -13,6 +14,8 @@ WIDTH = 500
 HEIGHT = 750
 DELAY = 50
 ROOT_DIR = os.path.abspath(os.path.join(__file__, "..", ".."))
+
+VERSION = "1.0.0"
 
 
 class Board(Canvas):
@@ -35,8 +38,18 @@ class Board(Canvas):
         self.infoList.append(self.create_text(130, 230, text="- <d> to move right", font=self.listFont, anchor="nw"))
         self.infoList.append(self.create_text(130, 260, text="- <space> to shoot", font=self.listFont, anchor="nw"))
         self.infoList.append(self.create_text(130, 290, text="- <p> to pause", font=self.listFont, anchor="nw"))
+        self.infoList.append(self.create_text(130, 320, text="- <i> for version-info", font=self.listFont, anchor="nw"))
         self.infoList.append(self.create_text(WIDTH / 2, 700, text="Press <space> to start the game", font=self.startGameFont))
+        self.bind_all("<i>", self.toggleShowVersion)
+        self.showVersion = False
         self.bind_all("<space>", self.startGame)
+
+    def toggleShowVersion(self, arg1):
+        if not self.showVersion:
+            self.infoList.append(self.create_text(330, 640, text="Version " + VERSION, font=self.listHeaderFont, anchor="nw", tag="version"))
+        else:
+            self.delete(self.find_withtag("version"))
+        self.showVersion = not self.showVersion
 
     def startGame(self, arg1):
         self.unbind_all("<space>")
@@ -47,42 +60,40 @@ class Board(Canvas):
         self.gameOver = False
         self.gamePaused = False
         self.score = 0
+        self.cooldown = 0
         self.highestPlat = ""
         self.initObj()
         self.after(DELAY, self.onTimer)
         self.bind_all("<a>", self.playerMoveLeft)
         self.bind_all("<d>", self.playerMoveRight)
+        self.bind_all("<space>", self.shoot)
         self.bind_all("<p>", self.togglePause)
 
     def initObj(self):
         bg_img = ImageTk.PhotoImage(file=ROOT_DIR + "/pyjump/gfx/bg.png")
+        player_img = ImageTk.PhotoImage(file=ROOT_DIR + "/pyjump/gfx/rocket.png")
+        monster_img = ImageTk.PhotoImage(file=ROOT_DIR + "/pyjump/gfx/monster.png")
         self.bg_img = bg_img
+        self.player_img = player_img
+        self.monster_img = monster_img
+        self.monster = ""
         self.bglist = []
+        self.shotList = []
         self.bglist.append(self.create_image(0, -50, image=self.bg_img, tag="bg1", anchor="nw"))
         self.bglist.append(self.create_image(0, -850, image=self.bg_img, tag="bg2", anchor="nw"))
-        self.spawnPlatform()
         self.create_rectangle(0, 0, WIDTH, 30, tag="topBar", fill="grey")
         self.topBarFont = tkFont.Font(size="20")
         self.create_text(WIDTH / 2, 15, text="PyJump", font=self.topBarFont, tag="topBar")
-        self.create_text(WIDTH - 100, 15, text="Score:", font=self.topBarFont, tag="topBar")
+        self.create_text(WIDTH - 115, 15, text="Score:", font=self.topBarFont, tag="topBar")
         self.create_text(WIDTH -50, 15, text=self.score, font=self.topBarFont, tag="score")
-        self.player = player.Player(0, 5, 50, 50, self.create_rectangle(WIDTH / 2, 100, WIDTH / 2 + 50, 150, tag="player", fill="green"))
+        self.player = player.Player(0, 5, 50, 50, self.create_image(WIDTH / 2, 100, tag="player", image=self.player_img, anchor="nw"))
 
-        randx = randint(10, WIDTH - 50)
-        self.highestPlat = self.create_rectangle(randx, HEIGHT - 10, randx + 50, HEIGHT, fill="blue", width=0, tag="platform")
-        randx = randint(10, WIDTH - 50)
-        self.highestPlat = self.create_rectangle(randx, HEIGHT - 130, randx + 50, HEIGHT - 120, fill="blue", width=0, tag="platform")
-        randx = randint(10, WIDTH - 50)
-        self.highestPlat = self.create_rectangle(randx, HEIGHT - 250, randx + 50, HEIGHT - 240, fill="blue", width=0, tag="platform")
-        randx = randint(10, WIDTH - 50)
-        self.highestPlat = self.create_rectangle(randx, HEIGHT - 370, randx + 50, HEIGHT - 360, fill="blue", width=0, tag="platform")
-        randx = randint(10, WIDTH - 50)
-        self.highestPlat = self.create_rectangle(randx, HEIGHT - 490, randx + 50, HEIGHT - 480, fill="blue", width=0, tag="platform")
-        randx = randint(10, WIDTH - 50)
-        self.highestPlat = self.create_rectangle(randx, HEIGHT - 610, randx + 50, HEIGHT - 600, fill="blue", width=0, tag="platform")
-
+        self.highestPlat = self.create_rectangle(WIDTH / 2 - 25, 150, WIDTH / 2 + 25, 160, fill="blue", width=0, tag="platform")
+        self.highestPlat = self.create_rectangle(WIDTH / 2 - 25, 70, WIDTH / 2 + 25, 80, fill="blue", width=0, tag="platform")
+        self.highestPlat = self.create_rectangle(WIDTH / 2 - 25, 230, WIDTH / 2 + 25, 240, fill="blue", width=0, tag="platform")
+    
     def checkCollision(self):
-        if int(self.gety(self.player.id)) >= HEIGHT - self.player.sizey:
+        if int(self.gety(self.player.id)) > HEIGHT:
             self.gameOver = True
 
         if self.getx(self.player.id) >= WIDTH:
@@ -90,6 +101,21 @@ class Board(Canvas):
 
         if self.getx(self.player.id) <= -self.player.sizex:
             self.move(self.player.id, WIDTH + self.player.sizex, 0)
+
+        for plat in self.find_withtag("platform"):
+            if self.gety(plat) > HEIGHT:
+                self.delete(plat)
+
+        player_y = int(self.gety(self.player.id) + 50)
+        for plat in self.find_withtag("platform"):
+            plat_y = int(self.gety(plat))
+            if player_y in range(plat_y, plat_y + 10):
+                for player_x in range(int(self.getx(self.player.id)), int(self.getx(self.player.id) + 50)):
+                    if player_x in range(int(self.getx(plat)), int(self.getx(plat) + 50)):
+                        self.player.jump()
+
+        if randint(1, 10) == 1 and self.monster == "":
+            self.spawnMonster()
 
     def doMove(self):
         self.player.move(self)
@@ -108,13 +134,11 @@ class Board(Canvas):
                 platMovey = 0
             self.move(plat, 0, -platMovey)
 
-        player_y = self.gety(self.player.id)
-        for plat in self.find_withtag("platform"):
-            if player_y + 50 == self.gety(plat):
-                for player_x in range(int(self.getx(self.player.id)), int(self.getx(self.player.id) + 50)):
-                    if player_x in range(int(self.getx(plat)), int(self.getx(plat) + 50)):
-                        self.player.jump()
+        if self.cooldown > 0:
+            self.cooldown -= 1
 
+        for shot in self.shotList:
+            self.move(shot.id, shot.movex, shot.movey)
 
     def checkHealth(self):
         if self.gameOver > 0:
@@ -146,6 +170,13 @@ class Board(Canvas):
     def playerMoveLeft(self, e):
         self.player.moveLeft(self)
 
+    def shoot(self, e):
+        if self.cooldown == 0:
+            shotPosx = self.getx(self.player.id) + 25
+            shotPosy = self.gety(self.player.id) + 25
+            self.shotList.append(shot.Shot(4, 10, 0, -20, self.create_rectangle(shotPosx - 2, shotPosy + 10, shotPosx + 2, shotPosy, width=0, fill="red", tag="shot")))
+            self.cooldown += 60
+
     def onTimer(self):
         if not self.gamePaused:
             self.checkHealth()
@@ -173,6 +204,8 @@ class Board(Canvas):
         randx = randint(10, WIDTH - 50)
         self.highestPlat = self.create_rectangle(randx, 30, randx + 50, 40, fill="blue", width=0, tag="platform")
 
+    def spawnMonster(self):
+        self.monster = self.create_image(randint(10, WIDTH - 10), 30, image=self.monster_img, tag="monster", anchor="nw")
 
 class Game(Frame):
     def __init__(self):
