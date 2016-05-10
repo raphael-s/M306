@@ -7,6 +7,7 @@ import os
 import platform
 import player
 import shot
+import monster
 import tkFont
 
 
@@ -59,6 +60,7 @@ class Board(Canvas):
     def initGame(self):
         self.gameOver = False
         self.gamePaused = False
+        self.remMonsterVar = False
         self.score = 0
         self.cooldown = 0
         self.highestPlat = ""
@@ -78,7 +80,7 @@ class Board(Canvas):
         self.monster_img = monster_img
         self.monster = ""
         self.bglist = []
-        self.shotList = []
+        self.shot = ""
         self.bglist.append(self.create_image(0, -50, image=self.bg_img, tag="bg1", anchor="nw"))
         self.bglist.append(self.create_image(0, -850, image=self.bg_img, tag="bg2", anchor="nw"))
         self.create_rectangle(0, 0, WIDTH, 30, tag="topBar", fill="grey")
@@ -114,8 +116,34 @@ class Board(Canvas):
                     if player_x in range(int(self.getx(plat)), int(self.getx(plat) + 50)):
                         self.player.jump()
 
-        if randint(1, 10) == 1 and self.monster == "":
+        if randint(1, 1000) == 1 and self.monster == "":
             self.spawnMonster()
+
+        if not self.monster == "":
+            if self.gety(self.monster.id) + self.monster.sizey > HEIGHT:
+                self.remMonsterVar = True
+
+            for monster_y in range(int(self.gety(self.monster.id)), int(self.gety(self.monster.id) + self.monster.sizey)):
+                if monster_y in range(int(self.gety(self.player.id)), int(self.gety(self.player.id) + self.player.sizey)):
+                    for monster_x in range(int(self.getx(self.monster.id)), int(self.getx(self.monster.id) + self.monster.sizex)):
+                        if monster_x in range(int(self.getx(self.player.id)), int(self.getx(self.player.id) + self.player.sizex)):
+                            self.gameOver = True
+
+                if not self.shot == "":
+                    if monster_y in range(int(self.gety(self.shot.id)), int(self.gety(self.shot.id) + self.shot.sizey)):
+                        for monster_x in range(int(self.getx(self.monster.id)), int(self.getx(self.monster.id) + self.monster.sizex)):
+                            if monster_x in range(int(self.getx(self.shot.id)), int(self.getx(self.shot.id) + self.shot.sizex)):
+                                self.remMonsterVar = True
+
+        self.remMonster()
+
+    def remMonster(self):
+        if self.remMonsterVar:
+            self.delete(self.monster.id)
+            self.remMonsterVar = False
+            self.monster = ""
+            self.score += 500
+            self.itemconfigure(self.find_withtag("score"), text=self.score)
 
     def doMove(self):
         self.player.move(self)
@@ -127,6 +155,9 @@ class Board(Canvas):
                 if self.gety(bg) >= HEIGHT:
                     self.move(bg, 0, -1550)
 
+            if not self.monster == "":
+                self.move(self.monster.id, 0, -self.player.movey)
+
         for plat in self.find_withtag("platform"):
             if self.player.movey < 0:
                 platMovey = self.player.movey
@@ -137,8 +168,8 @@ class Board(Canvas):
         if self.cooldown > 0:
             self.cooldown -= 1
 
-        for shot in self.shotList:
-            self.move(shot.id, shot.movex, shot.movey)
+        if not self.shot == "":
+            self.move(self.shot.id, 0, self.shot.movey)
 
     def checkHealth(self):
         if self.gameOver > 0:
@@ -174,7 +205,7 @@ class Board(Canvas):
         if self.cooldown == 0:
             shotPosx = self.getx(self.player.id) + 25
             shotPosy = self.gety(self.player.id) + 25
-            self.shotList.append(shot.Shot(4, 10, 0, -20, self.create_rectangle(shotPosx - 2, shotPosy + 10, shotPosx + 2, shotPosy, width=0, fill="red", tag="shot")))
+            self.shot = shot.Shot(4, 10, 0, -20, self.create_rectangle(shotPosx - 2, shotPosy + 10, shotPosx + 2, shotPosy, width=0, fill="red", tag="shot"))
             self.cooldown += 60
 
     def onTimer(self):
@@ -205,7 +236,7 @@ class Board(Canvas):
         self.highestPlat = self.create_rectangle(randx, 30, randx + 50, 40, fill="blue", width=0, tag="platform")
 
     def spawnMonster(self):
-        self.monster = self.create_image(randint(10, WIDTH - 10), 30, image=self.monster_img, tag="monster", anchor="nw")
+        self.monster = monster.Monster(50, 60, self.create_image(randint(10, WIDTH - 60), 30, image=self.monster_img, tag="monster", anchor="nw"))
 
 class Game(Frame):
     def __init__(self):
