@@ -66,11 +66,24 @@ class Board(Canvas):
         self.create_text(WIDTH / 2, 15, text="PyJump", font=self.topBarFont, tag="topBar")
         self.create_text(WIDTH - 100, 15, text="Score:", font=self.topBarFont, tag="topBar")
         self.create_text(WIDTH -50, 15, text=self.score, font=self.topBarFont, tag="score")
-        self.player = player.Player(0, 5, 50, 50, self.create_rectangle(50, HEIGHT - 200, 100, HEIGHT - 150, tag="player", fill="green"))
+        self.player = player.Player(0, 5, 50, 50, self.create_rectangle(WIDTH / 2, 100, WIDTH / 2 + 50, 150, tag="player", fill="green"))
+
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, HEIGHT - 10, randx + 50, HEIGHT, fill="blue", width=0, tag="platform")
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, HEIGHT - 130, randx + 50, HEIGHT - 120, fill="blue", width=0, tag="platform")
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, HEIGHT - 250, randx + 50, HEIGHT - 240, fill="blue", width=0, tag="platform")
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, HEIGHT - 370, randx + 50, HEIGHT - 360, fill="blue", width=0, tag="platform")
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, HEIGHT - 490, randx + 50, HEIGHT - 480, fill="blue", width=0, tag="platform")
+        randx = randint(10, WIDTH - 50)
+        self.highestPlat = self.create_rectangle(randx, HEIGHT - 610, randx + 50, HEIGHT - 600, fill="blue", width=0, tag="platform")
 
     def checkCollision(self):
         if int(self.gety(self.player.id)) >= HEIGHT - self.player.sizey:
-            self.player.jump()
+            self.gameOver = True
 
         if self.getx(self.player.id) >= WIDTH:
             self.move(self.player.id, -WIDTH -self.player.sizex, 0)
@@ -94,6 +107,14 @@ class Board(Canvas):
             else:
                 platMovey = 0
             self.move(plat, 0, -platMovey)
+
+        player_y = self.gety(self.player.id)
+        for plat in self.find_withtag("platform"):
+            if player_y + 50 == self.gety(plat):
+                for player_x in range(int(self.getx(self.player.id)), int(self.getx(self.player.id) + 50)):
+                    if player_x in range(int(self.getx(plat)), int(self.getx(plat) + 50)):
+                        self.player.jump()
+
 
     def checkHealth(self):
         if self.gameOver > 0:
