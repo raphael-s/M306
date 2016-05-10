@@ -173,6 +173,8 @@ class Board(Canvas):
 
     def checkHealth(self):
         if self.gameOver > 0:
+            with open("Scores.txt", "a") as myfile:
+                myfile.write(str(self.score) + "\n")
             self.gameoverfont = tkFont.Font(size="70")
             self.gameoversmallfont = tkFont.Font(size="40")
             self.restartfont = tkFont.Font(size="35")
