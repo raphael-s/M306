@@ -1,13 +1,12 @@
 from PIL import ImageTk
-from random import randint
 from Tkinter import Canvas
 from Tkinter import Frame
 from Tkinter import Tk
+from random import randint
+import monster
 import os
-import platform
 import player
 import shot
-import monster
 import tkFont
 
 
@@ -16,7 +15,7 @@ HEIGHT = 750
 DELAY = 50
 ROOT_DIR = os.path.abspath(os.path.join(__file__, "..", ".."))
 
-VERSION = "1.0.0"
+VERSION = '1.0.1'
 
 
 class Board(Canvas):
@@ -93,7 +92,7 @@ class Board(Canvas):
         self.highestPlat = self.create_rectangle(WIDTH / 2 - 25, 150, WIDTH / 2 + 25, 160, fill="blue", width=0, tag="platform")
         self.highestPlat = self.create_rectangle(WIDTH / 2 - 25, 70, WIDTH / 2 + 25, 80, fill="blue", width=0, tag="platform")
         self.highestPlat = self.create_rectangle(WIDTH / 2 - 25, 230, WIDTH / 2 + 25, 240, fill="blue", width=0, tag="platform")
-    
+
     def checkCollision(self):
         if int(self.gety(self.player.id)) > HEIGHT:
             self.gameOver = True
@@ -239,6 +238,7 @@ class Board(Canvas):
 
     def spawnMonster(self):
         self.monster = monster.Monster(50, 60, self.create_image(randint(10, WIDTH - 60), 30, image=self.monster_img, tag="monster", anchor="nw"))
+
 
 class Game(Frame):
     def __init__(self):
